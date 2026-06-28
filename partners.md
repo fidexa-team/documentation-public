@@ -1,29 +1,30 @@
-<img width="873" height="664" alt="image" src="https://github.com/user-attachments/assets/da4a8279-0276-4ff3-873e-fb06f6a2d777" /># Fidexa Partner API
+# Fidexa Partner API
 
 API para parceiros enviarem mensagens de WhatsApp e gerenciarem clientes na
 plataforma Fidexa. Esta referência cobre **autenticação**, **clientes** e
 **mensageria WhatsApp**.
 
 - **Base URL:** `https://api.fidexa.com.br`
+- **Prefixo de rota:** `/partner/v1` — todas as rotas abaixo já incluem o prefixo (ex.: `https://api.fidexa.com.br/partner/v1/auth/sign-in`).
 - **Formato:** JSON (`Content-Type: application/json`)
 - **Convenção de chaves:** **`snake_case`** no corpo (request e response)
-- **Auth:** `Bearer <JWT>` em todos os endpoints, exceto `auth/*`
+- **Auth:** `Bearer <JWT>` em todos os endpoints, exceto `partner/v1/auth/*`
 
 ---
 
 ## Sumário
 
 - [Autenticação](#autenticação)
-  - [`POST /partner/v1/auth/sign-in`](#post-authsign-in)
-  - [`POST /partner/v1/auth/refresh-token`](#post-authrefresh-token)
+    - [`POST /partner/v1/auth/sign-in`](#post-partnerv1authsign-in)
+    - [`POST /partner/v1/auth/refresh-token`](#post-partnerv1authrefresh-token)
 - [Clientes](#clientes)
-  - [`POST /partner/v1/customers`](#post-customers)
-  - [`POST /partner/v1/customers/batch`](#post-customersbatch)
+    - [`POST /partner/v1/customers`](#post-partnerv1customers)
+    - [`POST /partner/v1/customers/batch`](#post-partnerv1customersbatch)
 - [Mensageria WhatsApp](#mensageria-whatsapp)
-  - [`POST /partner/v1/whatsapp/message`](#post-whatsappmessage)
-  - [`POST /partner/v1/whatsapp/message-text`](#post-whatsappmessage-text)
-  - [`POST /partner/v1/whatsapp/message-pix/create`](#post-whatsappmessage-pixcreate)
-  - [`POST /partner/v1/whatsapp/message-pix/paid`](#post-whatsappmessage-pixpaid)
+    - [`POST /partner/v1/whatsapp/message`](#post-partnerv1whatsappmessage)
+    - [`POST /partner/v1/whatsapp/message-text`](#post-partnerv1whatsappmessage-text)
+    - [`POST /partner/v1/whatsapp/message-pix/create`](#post-partnerv1whatsappmessage-pixcreate)
+    - [`POST /partner/v1/whatsapp/message-pix/paid`](#post-partnerv1whatsappmessage-pixpaid)
 - [Formatos e convenções](#formatos-e-convenções)
 - [Tratamento de erros](#tratamento-de-erros)
 
@@ -31,9 +32,10 @@ plataforma Fidexa. Esta referência cobre **autenticação**, **clientes** e
 
 ## Autenticação
 
-A API usa **JWT (Bearer)**. Faça login em `auth/sign-in` para obter um
+A API usa **JWT (Bearer)**. Faça login em `partner/v1/auth/sign-in` para obter um
 `access_token` (curta duração) e um `refresh_token`. Quando o `access_token`
-expirar, use `auth/refresh-token` para obter um novo sem refazer o login.
+expirar, use `partner/v1/auth/refresh-token` para obter um novo sem refazer o
+login.
 
 Envie o token em **todas** as chamadas protegidas:
 
@@ -157,7 +159,7 @@ itens inválidos retornam erro, **sem abortar o lote**.
 | Campo | Tipo | Obrigatório | Descrição |
 |---|---|:---:|---|
 | `company_id` | uuid | sim | Empresa de todos os clientes do lote. |
-| `customers` | array | sim | 1 a 1000 itens. Mesmos campos do `POST /customers`, **sem** `company_id`. |
+| `customers` | array | sim | 1 a 1000 itens. Mesmos campos do `POST /partner/v1/customers`, **sem** `company_id`. |
 
 **Request**
 ```json
@@ -271,7 +273,7 @@ Envia uma mensagem baseada em **template aprovado** (categoria `UTILITY`).
 | `400` | Telefones inválidos, `variables` divergentes do template ou template não `APPROVED`/`UTILITY`. |
 | `404` | Número de envio, WhatsApp Business ou template não encontrado. |
 
-### `POST /whatsapp/message-text`
+### `POST /partner/v1/whatsapp/message-text`
 
 Envia uma **mensagem de texto livre** (requer janela de atendimento aberta).
 
@@ -420,7 +422,7 @@ Erros seguem um formato consistente:
 | Status | Significado |
 |---|---|
 | `400 Bad Request` | Dados inválidos ou faltando. Veja `message`. |
-| `401 Unauthorized` | Token ausente, inválido ou expirado — renove em `auth/refresh-token`. |
+| `401 Unauthorized` | Token ausente, inválido ou expirado — renove em `partner/v1/auth/refresh-token`. |
 | `404 Not Found` | Recurso (empresa, template, número) não encontrado. |
 | `409 Conflict` | Conflito de unicidade (ex.: `identifier` já existe). |
 
