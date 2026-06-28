@@ -1,4 +1,4 @@
-# Fidexa Partner API
+<img width="873" height="664" alt="image" src="https://github.com/user-attachments/assets/da4a8279-0276-4ff3-873e-fb06f6a2d777" /># Fidexa Partner API
 
 API para parceiros enviarem mensagens de WhatsApp e gerenciarem clientes na
 plataforma Fidexa. Esta referência cobre **autenticação**, **clientes** e
@@ -14,16 +14,16 @@ plataforma Fidexa. Esta referência cobre **autenticação**, **clientes** e
 ## Sumário
 
 - [Autenticação](#autenticação)
-  - [`POST /auth/sign-in`](#post-authsign-in)
-  - [`POST /auth/refresh-token`](#post-authrefresh-token)
+  - [`POST /partner/v1/auth/sign-in`](#post-authsign-in)
+  - [`POST /partner/v1/auth/refresh-token`](#post-authrefresh-token)
 - [Clientes](#clientes)
-  - [`POST /customers`](#post-customers)
-  - [`POST /customers/batch`](#post-customersbatch)
+  - [`POST /partner/v1/customers`](#post-customers)
+  - [`POST /partner/v1/customers/batch`](#post-customersbatch)
 - [Mensageria WhatsApp](#mensageria-whatsapp)
-  - [`POST /whatsapp/message`](#post-whatsappmessage)
-  - [`POST /whatsapp/message-text`](#post-whatsappmessage-text)
-  - [`POST /whatsapp/message-pix/create`](#post-whatsappmessage-pixcreate)
-  - [`POST /whatsapp/message-pix/paid`](#post-whatsappmessage-pixpaid)
+  - [`POST /partner/v1/whatsapp/message`](#post-whatsappmessage)
+  - [`POST /partner/v1/whatsapp/message-text`](#post-whatsappmessage-text)
+  - [`POST /partner/v1/whatsapp/message-pix/create`](#post-whatsappmessage-pixcreate)
+  - [`POST /partner/v1/whatsapp/message-pix/paid`](#post-whatsappmessage-pixpaid)
 - [Formatos e convenções](#formatos-e-convenções)
 - [Tratamento de erros](#tratamento-de-erros)
 
@@ -41,7 +41,7 @@ Envie o token em **todas** as chamadas protegidas:
 Authorization: Bearer <access_token>
 ```
 
-### `POST /auth/sign-in`
+### `POST /partner/v1/auth/sign-in`
 
 Autentica o parceiro e retorna os tokens. **Não requer** autenticação.
 
@@ -67,7 +67,7 @@ Autentica o parceiro e retorna os tokens. **Não requer** autenticação.
 }
 ```
 
-### `POST /auth/refresh-token`
+### `POST /partner/v1/auth/refresh-token`
 
 Renova o `access_token` a partir de um par válido. **Não requer** autenticação.
 
@@ -91,7 +91,7 @@ Renova o `access_token` a partir de um par válido. **Não requer** autenticaç�
 
 ## Clientes
 
-### `POST /customers`
+### `POST /partner/v1/customers`
 
 Cadastra um cliente em uma empresa do parceiro. 🔒 **Requer Bearer.**
 
@@ -146,7 +146,7 @@ empresa.
 | `404` | `company_id` não encontrado para o seu grupo. |
 | `409` | Já existe um cliente com este `identifier` na empresa. |
 
-### `POST /customers/batch`
+### `POST /partner/v1/customers/batch`
 
 Cadastra **até 1000** clientes de uma vez, todos da mesma empresa. 🔒 **Requer
 Bearer.**
@@ -235,7 +235,7 @@ Todos os endpoints abaixo 🔒 **requerem Bearer** e usam telefones no formato
 
 > O `sender_phone` precisa ser o número cadastrado para o seu grupo na Fidexa.
 
-### `POST /whatsapp/message`
+### `POST /partner/v1/whatsapp/message`
 
 Envia uma mensagem baseada em **template aprovado** (categoria `UTILITY`).
 
@@ -295,7 +295,7 @@ Envia uma **mensagem de texto livre** (requer janela de atendimento aberta).
 { "message_id": "03EC2B3E-0025-4680-8F3B-00002E883F79" }
 ```
 
-### `POST /whatsapp/message-pix/create`
+### `POST /partner/v1/whatsapp/message-pix/create`
 
 Envia um template com **cobrança PIX** (código dinâmico). Retorna também o
 `callback_message_id`, usado para confirmar o pagamento depois.
@@ -358,7 +358,7 @@ Envia um template com **cobrança PIX** (código dinâmico). Retorna também o
 }
 ```
 
-### `POST /whatsapp/message-pix/paid`
+### `POST /partner/v1/whatsapp/message-pix/paid`
 
 Marca uma cobrança PIX como **paga**, usando o `callback_message_id` retornado
 no `create`.
@@ -424,6 +424,6 @@ Erros seguem um formato consistente:
 | `404 Not Found` | Recurso (empresa, template, número) não encontrado. |
 | `409 Conflict` | Conflito de unicidade (ex.: `identifier` já existe). |
 
-> Para lotes (`/customers/batch`), erros de **itens** não usam esse formato:
+> Para lotes (`/partner/v1/customers/batch`), erros de **itens** não usam esse formato:
 > eles vêm dentro de `results[].error` com `code`/`message`. O envelope acima
 > vale apenas para falhas da requisição inteira.
