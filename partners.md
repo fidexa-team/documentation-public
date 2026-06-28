@@ -13,7 +13,6 @@ plataforma Fidexa. Esta referência cobre **autenticação**, **clientes** e
 
 ## Sumário
 
-- [Começando em 2 minutos](#começando-em-2-minutos)
 - [Autenticação](#autenticação)
   - [`POST /auth/sign-in`](#post-authsign-in)
   - [`POST /auth/refresh-token`](#post-authrefresh-token)
@@ -27,44 +26,6 @@ plataforma Fidexa. Esta referência cobre **autenticação**, **clientes** e
   - [`POST /whatsapp/message-pix/paid`](#post-whatsappmessage-pixpaid)
 - [Formatos e convenções](#formatos-e-convenções)
 - [Tratamento de erros](#tratamento-de-erros)
-
----
-
-## Começando em 2 minutos
-
-**1. Autentique** e guarde o `access_token`:
-
-```bash
-curl -X POST "$BASE_URL/auth/sign-in" \
-  -H "Content-Type: application/json" \
-  -d '{ "phone": "+5519999999999", "password": "sua-senha" }'
-```
-
-```json
-{
-  "access_token": "eyJhbGciOi...",
-  "features": ["..."],
-  "refresh_token": "8f3c1b2a-..."
-}
-```
-
-**2. Use o token** no header `Authorization` das demais chamadas:
-
-```bash
-curl -X POST "$BASE_URL/whatsapp/message-text" \
-  -H "Authorization: Bearer $ACCESS_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "sender_phone": "+5519999999999",
-    "recipient_phone": "+5519982358635",
-    "message": "Olá! Sua fatura já está disponível."
-  }'
-```
-
-Pronto — você enviou sua primeira mensagem. 🎉
-
-> 💡 Dica: defina `BASE_URL` e `ACCESS_TOKEN` como variáveis de ambiente para
-> copiar/colar os exemplos abaixo.
 
 ---
 
