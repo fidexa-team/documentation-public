@@ -4,7 +4,7 @@ API para parceiros enviarem mensagens de WhatsApp e gerenciarem clientes na
 plataforma Fidexa. Esta referência cobre **autenticação**, **clientes** e
 **mensageria WhatsApp**.
 
-- **Base URL:** `https://<seu-host-fidexa>/partner/v1`
+- **Base URL:** `https://api.fidexa.com.br`
 - **Formato:** JSON (`Content-Type: application/json`)
 - **Convenção de chaves:** **`snake_case`** no corpo (request e response)
 - **Auth:** `Bearer <JWT>` em todos os endpoints, exceto `auth/*`
