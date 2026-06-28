@@ -5,7 +5,7 @@ plataforma Fidexa. Esta referência cobre **autenticação**, **clientes** e
 **mensageria WhatsApp**.
 
 - **Base URL:** `https://api.fidexa.com.br`
-- **Prefixo de rota:** `/partner/v1` — todas as rotas abaixo já incluem o prefixo (ex.: `https://api.fidexa.com.br/partner/v1/auth/sign-in`).
+- **Prefixo de rota:** `/partner/v1` na maioria dos endpoints; o envio de mensagem com **múltiplos callbacks** usa `/partner/v2` (ver [Mensageria WhatsApp (v2)](#mensageria-whatsapp-v2)).
 - **Formato:** JSON (`Content-Type: application/json`)
 - **Convenção de chaves:** **`snake_case`** no corpo (request e response)
 - **Auth:** `Bearer <JWT>` em todos os endpoints, exceto `partner/v1/auth/*`
@@ -21,10 +21,11 @@ plataforma Fidexa. Esta referência cobre **autenticação**, **clientes** e
     - [`POST /partner/v1/customers`](#post-partnerv1customers)
     - [`POST /partner/v1/customers/batch`](#post-partnerv1customersbatch)
 - [Mensageria WhatsApp](#mensageria-whatsapp)
-    - [`POST /partner/v1/whatsapp/message`](#post-partnerv1whatsappmessage)
     - [`POST /partner/v1/whatsapp/message-text`](#post-partnerv1whatsappmessage-text)
     - [`POST /partner/v1/whatsapp/message-pix/create`](#post-partnerv1whatsappmessage-pixcreate)
     - [`POST /partner/v1/whatsapp/message-pix/paid`](#post-partnerv1whatsappmessage-pixpaid)
+- [Mensageria WhatsApp (v2)](#mensageria-whatsapp-v2)
+    - [`POST /partner/v2/whatsapp/message`](#post-partnerv2whatsappmessage)
 - [Formatos e convenções](#formatos-e-convenções)
 - [Tratamento de erros](#tratamento-de-erros)
 
@@ -237,42 +238,6 @@ Todos os endpoints abaixo 🔒 **requerem Bearer** e usam telefones no formato
 
 > O `sender_phone` precisa ser o número cadastrado para o seu grupo na Fidexa.
 
-### `POST /partner/v1/whatsapp/message`
-
-Envia uma mensagem baseada em **template aprovado** (categoria `UTILITY`).
-
-| Campo | Tipo | Obrigatório | Descrição |
-|---|---|:---:|---|
-| `sender_phone` | string | sim | Número de envio do seu grupo (`+DDI...`). |
-| `recipient_phone` | string | sim | Número do destinatário (`+DDI...`). |
-| `template_name` | string | sim | Nome do template aprovado no Meta. |
-| `variables` | object | sim | Pares chave/valor das variáveis do template. |
-| `callback` | string | não | Conteúdo (link/texto) a ser disparado como follow-up. |
-
-**Request**
-```json
-{
-  "sender_phone": "+5519999999999",
-  "recipient_phone": "+5519982358635",
-  "template_name": "aviso_fatura",
-  "variables": {
-    "nome": "Leonardo",
-    "valor": "R$ 150,00"
-  },
-  "callback": "https://app.fidexa.com.br/fatura/123"
-}
-```
-
-**`200 OK`**
-```json
-{ "message_id": "03EC2B3E-0025-4680-8F3B-00002E883F79" }
-```
-
-| Status | Quando |
-|---|---|
-| `400` | Telefones inválidos, `variables` divergentes do template ou template não `APPROVED`/`UTILITY`. |
-| `404` | Número de envio, WhatsApp Business ou template não encontrado. |
-
 ### `POST /partner/v1/whatsapp/message-text`
 
 Envia uma **mensagem de texto livre** (requer janela de atendimento aberta).
@@ -378,6 +343,70 @@ no `create`.
 ```json
 { "message_id": "03EC2B3E-0025-4680-8F3B-00002E883F79" }
 ```
+
+---
+
+## Mensageria WhatsApp (v2)
+
+Evolução do envio por template, com **múltiplos callbacks** — um por botão do
+template. Usa o prefixo **`/partner/v2`** (os demais endpoints continuam em
+`/partner/v1`).
+
+### `POST /partner/v2/whatsapp/message`
+
+Envia uma mensagem baseada em **template aprovado** (categoria `UTILITY`),
+podendo associar **vários callbacks**, cada um amarrado a um botão do template.
+🔒 **Requer Bearer.**
+
+**Comportamento:**
+
+- O destinatário (`recipient_phone`) **precisa já ter um cliente cadastrado** na
+  empresa; caso contrário retorna `404`.
+- Recebe a lista **`callbacks`** (`key` + `value`), um por botão do template.
+
+| Campo | Tipo | Obrigatório | Descrição |
+|---|---|:---:|---|
+| `sender_phone` | string | sim | Número de envio do seu grupo (`+DDI...`). |
+| `recipient_phone` | string | sim | Número do destinatário (`+DDI...`), com **cliente já cadastrado**. |
+| `template_name` | string | sim | Nome do template aprovado no Meta. |
+| `variables` | object | sim | Pares chave/valor das variáveis do template. |
+| `callbacks` | array | não | Lista de callbacks por botão (ver abaixo). |
+
+**`callbacks[]`**
+| Campo | Tipo | Descrição |
+|---|---|---|
+| `key` | string | Texto do botão do template ao qual o callback responde. **Deve existir** no `template_name` — senão retorna `400`. |
+| `value` | string | Conteúdo: link, texto ou arquivo em base64 (data URI). Arquivos (PDF, Excel, CSV ou imagem) são salvos no storage e a URL é persistida. |
+
+**Request**
+```json
+{
+  "sender_phone": "+5519999999999",
+  "recipient_phone": "+5519982358635",
+  "template_name": "cobranca_pix",
+  "variables": { "nome": "Leonardo" },
+  "callbacks": [
+    {
+      "key": "Receber chave Pix/Link",
+      "value": "https://app.fidexa.com.br/pix/123"
+    },
+    {
+      "key": "Segunda via boleto",
+      "value": "data:application/pdf;base64,JVBERi0xLjQ..."
+    }
+  ]
+}
+```
+
+**`200 OK`**
+```json
+{ "message_id": "03EC2B3E-0025-4680-8F3B-00002E883F79" }
+```
+
+| Status | Quando |
+|---|---|
+| `400` | Telefones inválidos, `variables` divergentes do template, template não `APPROVED`/`UTILITY`, ou `callbacks.key` que não existe no template. |
+| `404` | Cliente do `recipient_phone` não cadastrado; ou número de envio, WhatsApp Business ou template não encontrado. |
 
 ---
 
