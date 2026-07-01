@@ -18,6 +18,7 @@ plataforma Fidexa. Esta referência cobre **autenticação**, **clientes** e
     - [`POST /partner/v1/auth/sign-in`](#post-partnerv1authsign-in)
     - [`POST /partner/v1/auth/refresh-token`](#post-partnerv1authrefresh-token)
 - [Clientes](#clientes)
+    - [`GET /partner/v1/customers`](#get-partnerv1customers)
     - [`POST /partner/v1/customers`](#post-partnerv1customers)
     - [`POST /partner/v1/customers/batch`](#post-partnerv1customersbatch)
 - [Mensageria WhatsApp](#mensageria-whatsapp)
@@ -93,6 +94,60 @@ Renova o `access_token` a partir de um par válido. **Não requer** autenticaç�
 ---
 
 ## Clientes
+
+### `GET /partner/v1/customers`
+
+Lista os clientes do seu grupo de forma **paginada**. 🔒 **Requer Bearer.**
+
+Retorna clientes de **todas as empresas** do grupo do parceiro autenticado.
+Aceita filtro por `full_name` (busca **parcial**, tipo `like '%valor%'`) e por
+`cpf_cnpj` (**igualdade exata**, comparando apenas os dígitos). Cada item traz a
+empresa em que o cliente foi cadastrado (`company_id`, `company_identifier`,
+`company_description`) e as datas de criação/atualização.
+
+**Query params**
+
+| Param | Tipo | Obrigatório | Padrão | Descrição |
+|---|---|:---:|---|---|
+| `page` | int | não | `1` | Página desejada (inicia em 1). |
+| `page_size` | int | não | `100` | Itens por página. **Máximo 500** (valores acima são reduzidos a 500). |
+| `full_name` | string | não | — | Filtro parcial pelo nome completo (`like '%valor%'`). |
+| `cpf_cnpj` | string | não | — | Filtro exato por CPF/CNPJ (com ou sem pontuação; compara só dígitos). |
+
+**Request**
+```
+GET /partner/v1/customers?page=1&page_size=50&full_name=leonardo&cpf_cnpj=12332112333
+Authorization: Bearer <access_token>
+```
+
+**`200 OK`**
+```json
+{
+  "page": 1,
+  "page_size": 50,
+  "total_count": 1,
+  "total_pages": 1,
+  "customers": [
+    {
+      "id": "03EC2B3E-0025-4680-8F3B-00002E883F79",
+      "company_id": "FBB64ED3-8FD1-4B5B-B53A-00002F4A89B8",
+      "company_identifier": "EMP-001",
+      "company_description": "FIDEXA MATRIZ",
+      "full_name": "LEONARDO AZEVEDO",
+      "email": "leonardo.azevedo@fidexa.com.br",
+      "cpf_cnpj": "12332112333",
+      "cell_phone1": "+5519982358635",
+      "cell_phone2": "+5519982358635",
+      "created_at": "2026-06-30T14:20:11",
+      "updated_at": "2026-07-01T09:05:42"
+    }
+  ]
+}
+```
+
+| Status | Quando |
+|---|---|
+| `400` | Parâmetros de consulta inválidos. |
 
 ### `POST /partner/v1/customers`
 
