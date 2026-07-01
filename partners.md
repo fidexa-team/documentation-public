@@ -17,6 +17,8 @@ plataforma Fidexa. Esta referência cobre **autenticação**, **clientes** e
 - [Autenticação](#autenticação)
     - [`POST /partner/v1/auth/sign-in`](#post-partnerv1authsign-in)
     - [`POST /partner/v1/auth/refresh-token`](#post-partnerv1authrefresh-token)
+- [Empresas](#empresas)
+    - [`GET /partner/v1/companies`](#get-partnerv1companies)
 - [Clientes](#clientes)
     - [`GET /partner/v1/customers`](#get-partnerv1customers)
     - [`POST /partner/v1/customers`](#post-partnerv1customers)
@@ -90,6 +92,60 @@ Renova o `access_token` a partir de um par válido. **Não requer** autenticaç�
 
 **`201 Created`** — mesmo corpo do `sign-in` (novo `access_token` e
 `refresh_token`).
+
+---
+
+## Empresas
+
+### `GET /partner/v1/companies`
+
+Lista as empresas do seu grupo de forma **paginada**. 🔒 **Requer Bearer.**
+
+Retorna o `company_group_id` e a `company_group_description` do grupo do parceiro
+autenticado, junto de um array `companies`. Cada empresa traz `id`,
+`description`, `identifier`, `phone` e as datas de criação/atualização. O `phone`
+é o **primeiro telefone válido** da empresa (não bloqueado e não removido);
+retorna `null` quando não há telefone disponível. Empresas removidas não são
+retornadas.
+
+**Query params**
+
+| Param | Tipo | Obrigatório | Padrão | Descrição |
+|---|---|:---:|---|---|
+| `page` | int | não | `1` | Página desejada (inicia em 1). |
+| `page_size` | int | não | `100` | Itens por página. **Máximo 500** (valores acima são reduzidos a 500). |
+
+**Request**
+```
+GET /partner/v1/companies?page=1&page_size=50
+Authorization: Bearer <access_token>
+```
+
+**`200 OK`**
+```json
+{
+  "company_group_id": "A1B2C3D4-0000-0000-0000-000000000000",
+  "company_group_description": "GRUPO FIDEXA",
+  "page": 1,
+  "page_size": 50,
+  "total_count": 1,
+  "total_pages": 1,
+  "companies": [
+    {
+      "id": "FBB64ED3-8FD1-4B5B-B53A-00002F4A89B8",
+      "description": "FIDEXA MATRIZ",
+      "identifier": "EMP-001",
+      "phone": "+5519999999999",
+      "created_at": "2026-06-30T14:20:11",
+      "updated_at": "2026-07-01T09:05:42"
+    }
+  ]
+}
+```
+
+| Status | Quando |
+|---|---|
+| `400` | Parâmetros de consulta inválidos. |
 
 ---
 
