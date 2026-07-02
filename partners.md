@@ -511,7 +511,7 @@ tudo contra o próprio template. 🔒 **Requer Bearer.**
   "template": {
     "name": "reinauguracao_dia03",
     "category": "MARKETING | UTILITY",
-    "document": "https://i.imgur.com/IQc464u.jpeg",
+    "document": "https://...",
     "variables": {
       "nome_cliente": "Leonardo",
       "nome_loja": "Fidexa"
@@ -519,7 +519,7 @@ tudo contra o próprio template. 🔒 **Requer Bearer.**
     "callbacks": [
       {
         "key": "Receber chave Pix/Link",
-        "value": "https://app.fidexa.com.br/pix/123"
+        "value": "https://..."
       },
       {
         "key": "Pagar na loja",
