@@ -509,7 +509,7 @@ tudo contra o próprio template. 🔒 **Requer Bearer.**
   "sender_phone": "+5519999999999",
   "recipient_phone": "+5519982358635",
   "template": {
-    "name": "reinauguracao_dia03",
+    "name": "NOME_DO_TEMPLATE",
     "category": "MARKETING | UTILITY",
     "document": "https://...",
     "variables": {
