@@ -5,7 +5,7 @@ plataforma Fidexa. Esta referência cobre **autenticação**, **clientes** e
 **mensageria WhatsApp**.
 
 - **Base URL:** `https://api.fidexa.com.br`
-- **Prefixo de rota:** `/partner/v1` na maioria dos endpoints; o envio de mensagem com **múltiplos callbacks** usa `/partner/v2` (ver [Mensageria WhatsApp (v2)](#mensageria-whatsapp-v2)).
+- **Prefixo de rota:** `/partner/v1` na maioria dos endpoints; o envio de mensagem por template (corpo aninhado em `template`, com validação contra o template do Meta e débito de saldo) usa `/partner/v2` (ver [Mensageria WhatsApp (v2)](#mensageria-whatsapp-v2)).
 - **Formato:** JSON (`Content-Type: application/json`)
 - **Convenção de chaves:** **`snake_case`** no corpo (request e response)
 - **Auth:** `Bearer <JWT>` em todos os endpoints, exceto `partner/v1/auth/*`
@@ -459,34 +459,48 @@ no `create`.
 
 ## Mensageria WhatsApp (v2)
 
-Evolução do envio por template, com **múltiplos callbacks** — um por botão do
-template. Usa o prefixo **`/partner/v2`** (os demais endpoints continuam em
-`/partner/v1`).
+Evolução do envio por template. O corpo é **aninhado**: os telefones ficam no
+topo e todos os dados do template vão dentro do objeto **`template`**. Os campos
+`variables`, `callbacks` e `document` são **condicionais** — cada um só é
+obrigatório quando o **template no Meta** o exige. Usa o prefixo **`/partner/v2`**
+(os demais endpoints continuam em `/partner/v1`).
 
 ### `POST /partner/v2/whatsapp/message`
 
-Envia uma mensagem baseada em **template aprovado** (categoria `UTILITY`),
-podendo associar **vários callbacks**, cada um amarrado a um botão do template.
-🔒 **Requer Bearer.**
+Envia uma mensagem baseada em **template aprovado no Meta**, com validação de
+tudo contra o próprio template. 🔒 **Requer Bearer.**
 
 **Comportamento:**
 
 - O destinatário (`recipient_phone`) **precisa já ter um cliente cadastrado** na
   empresa; caso contrário retorna `404`.
-- Recebe a lista **`callbacks`** (`key` + `value`), um por botão do template.
+- O `sender_phone` deve corresponder a **algum** número ativo do seu grupo (não
+  bloqueado e não removido).
+- **Saldo:** antes de enviar, valida se a empresa tem crédito da **categoria** do
+  template; sem saldo, retorna `400` (`Saldo insuficiente.`) e nada é enviado. O
+  débito de **1 mensagem** ocorre **após o envio com sucesso**.
+- Validações contra o template: `category`, `variables`, `callbacks` (por botão)
+  e `document` (header de mídia) — ver abaixo.
 
 | Campo | Tipo | Obrigatório | Descrição |
 |---|---|:---:|---|
 | `sender_phone` | string | sim | Número de envio do seu grupo (`+DDI...`). |
 | `recipient_phone` | string | sim | Número do destinatário (`+DDI...`), com **cliente já cadastrado**. |
-| `template_name` | string | sim | Nome do template aprovado no Meta. |
-| `variables` | object | sim | Pares chave/valor das variáveis do template. |
-| `callbacks` | array | não | Lista de callbacks por botão (ver abaixo). |
+| `template` | object | sim | Dados do template a enviar (ver abaixo). |
 
-**`callbacks[]`**
+**`template`**
+| Campo | Tipo | Obrigatório | Descrição |
+|---|---|:---:|---|
+| `name` | string | sim | Nome do template aprovado no Meta. |
+| `category` | string | não | `UTILITY` (padrão) ou `MARKETING`. **Deve corresponder** à categoria do template no Meta — senão retorna `400`. Define de qual saldo a mensagem é debitada. |
+| `document` | string | condicional | URL (`http(s)`) da mídia do **header** (ex.: imagem). **Obrigatório** quando o template tem header de mídia; ignorado quando não tem. |
+| `variables` | object | condicional | Pares chave/valor das variáveis do template. **Obrigatório** quando o template tem variáveis; deve bater **exatamente** com as do template (faltar ou sobrar → `400`). |
+| `callbacks` | array | condicional | Lista de callbacks por botão (ver abaixo). **Obrigatório** quando o template tem **botões de ação** (quick reply): é preciso **um callback por botão de ação**. |
+
+**`template.callbacks[]`**
 | Campo | Tipo | Descrição |
 |---|---|---|
-| `key` | string | Texto do botão do template ao qual o callback responde. **Deve existir** no `template_name` — senão retorna `400`. |
+| `key` | string | Texto do botão do template ao qual o callback responde. **Deve existir** em `template.name` — senão retorna `400`. |
 | `value` | string | Conteúdo: link, texto ou arquivo em base64 (data URI). Arquivos (PDF, Excel, CSV ou imagem) são salvos no storage e a URL é persistida. |
 
 **Request**
@@ -494,18 +508,25 @@ podendo associar **vários callbacks**, cada um amarrado a um botão do template
 {
   "sender_phone": "+5519999999999",
   "recipient_phone": "+5519982358635",
-  "template_name": "cobranca_pix",
-  "variables": { "nome": "Leonardo" },
-  "callbacks": [
-    {
-      "key": "Receber chave Pix/Link",
-      "value": "https://app.fidexa.com.br/pix/123"
+  "template": {
+    "name": "reinauguracao_dia03",
+    "category": "MARKETING | UTILITY",
+    "document": "https://i.imgur.com/IQc464u.jpeg",
+    "variables": {
+      "nome_cliente": "Leonardo",
+      "nome_loja": "Fidexa"
     },
-    {
-      "key": "Segunda via boleto",
-      "value": "data:application/pdf;base64,JVBERi0xLjQ..."
-    }
-  ]
+    "callbacks": [
+      {
+        "key": "Receber chave Pix/Link",
+        "value": "https://app.fidexa.com.br/pix/123"
+      },
+      {
+        "key": "Pagar na loja",
+        "value": "Segue o endereço da loja: R. Guararapes, 136 - Limeira/SP"
+      }
+    ]
+  }
 }
 ```
 
@@ -516,7 +537,7 @@ podendo associar **vários callbacks**, cada um amarrado a um botão do template
 
 | Status | Quando |
 |---|---|
-| `400` | Telefones inválidos, `variables` divergentes do template, template não `APPROVED`/`UTILITY`, ou `callbacks.key` que não existe no template. |
+| `400` | Telefones inválidos; `sender_phone` não pertence ao grupo; template não `APPROVED`; `category` divergente do template ou inválida; `variables` divergentes; `document` ausente num template com header de mídia; `callbacks` ausentes/`key` inexistente para os botões de ação; **saldo insuficiente**. |
 | `404` | Cliente do `recipient_phone` não cadastrado; ou número de envio, WhatsApp Business ou template não encontrado. |
 
 ---
